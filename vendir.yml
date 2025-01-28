@@ -1,0 +1,16 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: n8n
+    git:
+      url: https://github.com/community-charts/helm-charts
+      ref: main
+    includePaths:
+    - charts/n8n/**/*
+- path: helm/n8n/templates
+  contents:
+  - path: .
+    directory:
+      path: vendor/n8n/charts/n8n/templates

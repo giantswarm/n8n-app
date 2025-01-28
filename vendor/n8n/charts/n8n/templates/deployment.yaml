@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: {{ .Values.strategy.type }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "n8n.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "n8n.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "n8n.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: N8N_HIRING_BANNER_ENABLED
+              value: "false"
+            - name: NODE_ENV
+              value: production
+            - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+              value: "true"
+            - name: N8N_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: N8N_DEFAULT_LOCALE
+              value: {{ .Values.defaultLocale | quote }}
+            - name: GENERIC_TIMEZONE
+              value: {{ .Values.timezone | quote }}
+            - name: N8N_GRACEFUL_SHUTDOWN_TIMEOUT
+              value: {{ .Values.gracefulShutdownTimeout | quote }}
+          {{- if eq .Values.db.type "postgresdb" }}
+            - name: DB_POSTGRESDB_USER
+              value: {{ include "n8n.postgresql.username" . }}
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "n8n.postgresql.fullname" .) .Values.externalPostgresql.existingSecret }}
+              {{- if .Values.postgresql.auth.username }}
+                  key: password
+              {{- else }}
+                  key: postgres-password
+              {{- end }}
+                  optional: true
+            {{- if eq .Values.worker.mode "queue" }}
+            - name: QUEUE_BULL_REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "n8n.redis.fullname" .) .Values.externalRedis.existingSecret }}
+                  key: redis-username
+                  optional: true
+            - name: QUEUE_BULL_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "n8n.redis.fullname" .) .Values.externalRedis.existingSecret }}
+                  key: redis-password
+                  optional: true
+            {{- end }}
+          {{- end }}
+          {{- if .Values.webhook.url }}
+            - name: WEBHOOK_URL
+              value: {{ .Values.webhook.url | quote }}
+          {{- end }}
+          {{- range $key, $value := .Values.extraEnvVars }}
+            - name: {{ upper $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-database-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-logging-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-diagnostics-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-version-notifications-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-public-api-configmap
+          {{- if and (eq .Values.db.type "postgresdb") (or (eq .Values.worker.mode "queue") (eq .Values.webhook.mode "queue")) }}
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-queue-configmap
+          {{- end }}
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-workflow-history-configmap
+            - secretRef:
+                name: {{ template "n8n.fullname" . }}-encryption-key-secret
+          {{- range .Values.extraSecretNamesForEnvFrom }}
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
