@@ -1,0 +1,15 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: Update mlflow chart with image tag 2.20.0...
+      sha: ce5647b441df799d05d53300caf78d63931046eb
+      tags:
+      - mlflow-0.12.2
+    path: n8n
+  path: vendor
+- contents:
+  - directory: {}
+    path: .
+  path: helm/n8n/templates
+kind: LockConfig

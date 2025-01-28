@@ -1,0 +1,264 @@
+{{ template "chart.header" . }}
+
+![n8n](https://raw.githubusercontent.com/n8n-io/n8n-docs/refs/heads/main/docs/_images/n8n-docs-withWordmark.svg)
+
+{{ template "chart.description" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Get Helm Repository Info
+
+```console
+helm repo add community-charts https://community-charts.github.io/helm-charts
+helm repo update
+```
+
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+
+## Installing the Chart
+
+```console
+helm install [RELEASE_NAME] community-charts/{{ template "chart.name" . }}
+```
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+> **Tip**: Search all available chart versions using `helm search repo community-charts -l`. Please don't forget to run `helm repo update` before the command.
+
+## Basic Deployment with Ingress
+
+```yaml
+ingress:
+  enabled: true
+  hosts:
+    - host: n8n.mydomain.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+```
+
+## Deployment with Bitnami's PostgreSQL
+
+```yaml
+db:
+  type: postgresdb
+
+postgresql:
+  enabled: true
+  
+  primary:
+    persistence:
+      existingClaim: "my-n8n-claim"
+```
+
+## Deployment with External PostgreSQL
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+```
+
+## Deployment with External PostgreSQL and Exist Secret on Kubernetes
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  database: "n8n"
+
+  existingSecret: "my-k8s-secret-contains-postgres-password-key-and-credential"
+```
+
+## Queue Mode with Bitnami's Redis
+
+> **Tip**: Queue mode doesn't work with default SQLite mode
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+redis:
+  enabled: true
+```
+
+## Queue Mode with External Redis
+
+> **Tip**: Queue mode doesn't work with default SQLite mode
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+```
+
+## Queue Mode with External Redis and Exist Secret on Kubernetes
+
+> **Tip**: Queue mode doesn't work with default SQLite mode
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  database: "n8n"
+
+  existingSecret: "my-k8s-secret-contains-postgres-password-key-and-credential"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+
+  existingSecret: "my-k8s-secret-contains-redis-password-key-and-credential"
+```
+
+## Webhook Node Deployment
+
+> **Tip**: Webhook needs PostgreSQL backend and Redis based queue mode.
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: n8n.mydomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+webhook:
+  mode: queue
+
+  url: "https://webhook.mydomain.com"
+```
+
+## Full Example
+
+```yaml
+log:
+  level: warn
+
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: n8n.mydomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+webhook:
+  mode: queue
+  url: "https://webhook.mydomain.com"
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 250Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+```
+
+{{ template "chart.requirementsSection" . }}
+
+## Uninstall Helm Chart
+
+```console
+helm uninstall [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+helm upgrade [RELEASE_NAME] community-charts/{{ template "chart.name" . }}
+```
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+## Chart Development
+
+Please install unittest helm plugin with `helm plugin install https://github.com/helm-unittest/helm-unittest` command and use following command to run helm unit tests.
+
+```console
+helm unittest --strict --file unittests/**/*.yaml charts/{{ template "chart.name" . }}
+```
+
+{{ template "chart.maintainersSection" . }}

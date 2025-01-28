@@ -1,0 +1,313 @@
+# yaml-language-server: $schema=values.schema.json
+# Default values for n8n.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: n8nio/n8n
+  # -- This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# -- This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# -- This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# -- This will set the deployment strategy more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+strategy:
+  type: "RollingUpdate"
+  rollingUpdate:
+    maxSurge: "25%"
+    maxUnavailable: "25%"
+
+# -- This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- This is for setting Kubernetes Annotations to a Pod. For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# -- This is for setting Kubernetes Labels to a Pod. For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+# -- This is for setting Security Context to a Pod. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- This is for setting Security Context to a Container. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # -- This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # -- This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 5678
+  # -- Default Service name
+  name: http
+  # -- Additional service annotations
+  annotations: {}
+
+# -- n8n log configurations
+log:
+  # -- The log output level. The available options are (from lowest to highest level) are error, warn, info, and debug. The default value is info. You can learn more about these options [here](https://docs.n8n.io/hosting/logging-monitoring/logging/#log-levels).
+  level: info
+  # -- Where to output logs to. Options are: `console` or `file` or both.
+  output:
+    - console
+
+  # -- Scopes to filter logs by. Nothing is filtered by default. Supported log scopes: concurrency, external-secrets, license, multi-main-setup, pubsub, redis, scaling, waiting-executions
+  scopes: []
+    # - concurrency
+    # - external-secrets
+    # - license
+    # - multi-main-setup
+    # - pubsub
+    # - redis
+    # - scaling
+    # - waiting-executions
+
+  file:
+    # -- Location of the log files inside `~/.n8n`. Only for `file` log output.
+    location: "logs/n8n.log"
+    # -- The maximum size (in MB) for each log file. By default, n8n uses 16 MB.
+    maxsize: 16
+    # -- Max number of log files to keep, or max number of days to keep logs for. Once the limit is reached, the oldest log files will be rotated out. If using days, append a `d` suffix. Only for `file` log output.
+    maxcount: "100"
+
+# -- n8n database configurations
+db:
+  # -- Prefix to use for table names.
+  tablePrefix: ""
+  # -- Type of database to use. Valid values 'sqlite' | 'postgresdb'
+  type: sqlite
+
+  logging:
+    # -- Whether database logging is enabled.
+    enabled: false
+    # -- Database logging level. Requires `maxQueryExecutionTime` to be higher than `0`. Valid values 'query' | 'error' | 'schema' | 'warn' | 'info' | 'log' | 'all'
+    options: error
+    # -- Only queries that exceed this time (ms) will be logged. Set `0` to disable.
+    maxQueryExecutionTime: 0
+
+  sqlite:
+    # -- SQLite database file name
+    database: "database.sqlite"
+    # -- SQLite database pool size. Set to `0` to disable pooling.
+    poolSize: 0
+    # -- Runs VACUUM operation on startup to rebuild the database. Reduces file size and optimizes indexes. This is a long running blocking operation and increases start-up time.
+    vacuum: false
+
+diagnostics:
+  # -- Whether diagnostics are enabled.
+  enabled: false
+
+  # -- Diagnostics config for frontend.
+  frontendConfig: "1zPn9bgWPzlQc0p8Gj1uiK6DOTn;https://telemetry.n8n.io"
+  # -- Diagnostics config for backend.
+  backendConfig: "1zPn7YoGC3ZXE9zLeTKLuQCB4F6;https://telemetry.n8n.io"
+
+  postHog:
+    # -- API key for PostHog.
+    apiKey: "phc_4URIAm1uYfJO7j8kWSe0J8lc8IqnstRLS7Jx8NcakHo"
+    # -- API host for PostHog.
+    apiHost: "https://ph.n8n.io"
+
+versionNotifications:
+  # -- Whether to request notifications about new n8n versions
+  enabled: false
+  # -- Endpoint to retrieve n8n version information from
+  endpoint: "https://api.n8n.io/api/versions/"
+  # -- URL for versions panel to page instructing user on how to update n8n instance
+  infoUrl: "https://docs.n8n.io/hosting/installation/updating/"
+
+api:
+  # -- Whether to enable the Public API
+  enabled: true
+  # -- Path segment for the Public API
+  path: api
+  # -- Whether to enable the Swagger UI for the Public API
+  swagger:
+    enabled: true
+
+worker:
+  # -- Use `regular` to use main node as executer, or use `queue` to have worker nodes
+  mode: regular
+
+  # -- number of workers
+  count: 2
+  # -- number of concurrency for each worker
+  concurrency: 10
+
+webhook:
+  # -- Use `regular` to use main node as webhook node, or use `queue` to have webhook nodes
+  mode: regular
+  # -- number of webhooks
+  count: 2
+  # -- Webhook url together with http schema
+  url: ""
+
+workflowHistory:
+  # -- Whether to save workflow history versions
+  enabled: true
+  # -- Time (in hours) to keep workflow history versions for. To disable it, use -1 as a value
+  pruneTime: 336
+
+# -- If you install n8n first time, you can keep this empty and it will be auto generated and never change again. If you already have a encryption key generated before, please use it here.
+encryptionKey: ""
+
+# -- For instance, the Schedule node uses it to know at what time the workflow should start. Find you timezone from here: https://momentjs.com/timezone/
+timezone: "Europe/Berlin"
+
+# -- A locale identifier, compatible with the Accept-Language header. n8n doesn't support regional identifiers, such as de-AT.
+defaultLocale: en
+
+# -- graceful shutdown timeout in seconds
+gracefulShutdownTimeout: 30
+
+# -- This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: n8n.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: n8n-tls
+  #    hosts:
+  #      - n8n.local
+
+# -- Extra environment variables
+extraEnvVars: {}
+
+# -- Extra secrets for environment variables
+extraSecretNamesForEnvFrom: []
+
+# -- This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # limits:
+  #   cpu: 2000m
+  #   memory: 1Gi
+
+# -- This is to setup the liveness probe more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+# -- This is to setup the readiness probe more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+readinessProbe:
+  httpGet:
+    path: /healthz/readiness
+    port: http
+
+# -- Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# -- For more information checkout: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+nodeSelector: {}
+
+# -- For more information checkout: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+tolerations: []
+
+# -- For more information checkout: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# -- Bitnami Redis configuration
+redis:
+  # -- Enable redis
+  enabled: false
+  architecture: standalone
+
+  master:
+    persistence:
+      enabled: false
+
+# -- External Redis parameters
+externalRedis:
+  # -- External Redis server host
+  host: ""
+  # -- External Redis username
+  username: ""
+  # -- External Redis password
+  password: ""
+  # -- External Redis server port
+  port: 6379
+  # -- The name of an existing secret with Redis (must contain key `redis-password`) and Sentinel credentials.
+  # When it's set, the `externalRedis.password` parameter is ignored
+  existingSecret: ""
+
+# -- Bitnami PostgreSQL configuration
+postgresql:
+  # -- Enable postgresql
+  enabled: false
+  architecture: standalone
+
+  primary:
+    service:
+      ports:
+        postgresql: 5432
+
+    persistence:
+      enabled: true
+      existingClaim: ""
+
+  auth:
+    username: ""
+    password: ""
+    # -- The name of the PostgreSQL database. For more information: https://docs.n8n.io/hosting/configuration/supported-databases-settings/#required-permissions
+    database: "n8n"
+
+# -- External PostgreSQL parameters
+externalPostgresql:
+  # -- External PostgreSQL server host
+  host: ""
+  # -- External PostgreSQL username
+  username: "postgres"
+  # -- External PostgreSQL password
+  password: ""
+  # -- External PostgreSQL server port
+  port: 5432
+  # -- The name of the external PostgreSQL database. For more information: https://docs.n8n.io/hosting/configuration/supported-databases-settings/#required-permissions
+  database: n8n
+  # -- The name of an existing secret with PostgreSQL (must contain key `postgres-password`) and credentials.
+  # When it's set, the `externalPostgresql.password` parameter is ignored
+  existingSecret: ""
