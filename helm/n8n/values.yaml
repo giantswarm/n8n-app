@@ -46,12 +46,15 @@ podSecurityContext: {}
 
 # -- This is for setting Security Context to a Container. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 securityContext:
-  # capabilities:
-  #   drop:
-  #   - ALL
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
   # runAsUser: 1000
   readOnlyRootFilesystem: true
   runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
 
 # -- This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
