@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 0.0.1
+appVersion: 1.75.2
 name: n8n
 description: A Helm chart for n8n official chart
 home: https://github.com/giantswarm/n8n
