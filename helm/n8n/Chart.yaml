@@ -6,7 +6,7 @@ home: https://github.com/giantswarm/n8n
 icon: https://s.giantswarm.io/app-icons/k8s-initiator/1/light.svg
 sources:
   - https://github.com/community-charts/helm-charts
-version: 0.1.2
+version: 0.1.3
 annotations:
   application.giantswarm.io/team: team-planeteers
 dependencies:
