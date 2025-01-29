@@ -5,8 +5,8 @@ description: A Helm chart for n8n official chart
 home: https://github.com/giantswarm/n8n
 icon: https://s.giantswarm.io/app-icons/k8s-initiator/1/light.svg
 sources:
-- https://github.com/community-charts/helm-charts
-version: 0.1.8
+  - https://github.com/community-charts/helm-charts
+version: 0.1.2
 annotations:
   application.giantswarm.io/team: team-planeteers
 dependencies:
