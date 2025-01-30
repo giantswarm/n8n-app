@@ -3,6 +3,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "n8n.worker.fullname" . }}
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
   labels:
     {{- include "n8n.worker.labels" . | nindent 4 }}
 spec:

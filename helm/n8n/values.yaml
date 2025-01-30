@@ -50,8 +50,8 @@ securityContext:
   capabilities:
     drop:
     - ALL
-  # runAsUser: 1000
-  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: false
   runAsNonRoot: true
   seccompProfile:
     type: RuntimeDefault
