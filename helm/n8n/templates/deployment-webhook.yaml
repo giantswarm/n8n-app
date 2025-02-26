@@ -56,7 +56,11 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
+            {{- if .Values.postgresql.resources }}
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+            {{- else }}
             {{- toYaml .Values.resources | nindent 12 }}
+            {{- end }}
           env:
             - name: N8N_HIRING_BANNER_ENABLED
               value: "false"

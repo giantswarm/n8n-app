@@ -293,6 +293,16 @@ postgresql:
       enabled: true
       existingClaim: ""
 
+    resources:
+      limits:
+        cpu: 150m
+        ephemeral-storage: 2Gi
+        memory: 192Mi
+      requests:
+        cpu: 100m
+        ephemeral-storage: 50Mi
+        memory: 128Mi
+
   auth:
     username: ""
     password: ""
