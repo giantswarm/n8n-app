@@ -11,7 +11,7 @@ annotations:
   application.giantswarm.io/team: team-planeteers
 dependencies:
   - name: redis
-    version: 20.9.0
+    version: 20.10.0
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
   - name: postgresql
