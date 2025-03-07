@@ -27,6 +27,50 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 
 > **Tip**: Search all available chart versions using `helm search repo community-charts -l`. Please don't forget to run `helm repo update` before the command.
 
+## Full Example
+
+```yaml
+log:
+  level: warn
+
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: n8n.mydomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+webhook:
+  mode: queue
+  url: "https://webhook.mydomain.com"
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 250Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+```
+
 ## Basic Deployment with Ingress
 
 ```yaml
@@ -185,49 +229,36 @@ webhook:
   url: "https://webhook.mydomain.com"
 ```
 
-## Full Example
+## External Task Runner Example
+
+Please find more detail about external task runners from [here](https://docs.n8n.io/hosting/securing/hardening-task-runners/).
 
 ```yaml
-log:
-  level: warn
-
-db:
-  type: postgresdb
-
-externalPostgresql:
-  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
-  username: "n8nuser"
-  password: "Pa33w0rd!"
-  database: "n8n"
-
-worker:
-  mode: queue
-
-externalRedis:
-  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
-  username: "default"
-  password: "Pa33w0rd!"
-
-ingress:
-  enabled: true
-  hosts:
-    - host: n8n.mydomain.com
-      paths:
-        - path: /
-          pathType: Prefix
-
-webhook:
-  mode: queue
-  url: "https://webhook.mydomain.com"
-
-resources:
-  requests:
-    cpu: 1000m
-    memory: 250Mi
-  limits:
-    cpu: 2000m
-    memory: 2Gi
+taskRunners:
+  mode: external
 ```
+
+## Upgrading
+
+This section outlines major updates and breaking changes for each version of the Helm Chart to help you transition smoothly between releases.
+
+---
+
+### Version-Specific Upgrade Notes
+
+<details>
+
+<summary>Upgrading to 1.x.x</summary>
+
+#### Breaking Changes
+
+- The `diagnostics.externalTaskRunnersSentryDsn` setting has been relocated to `sentry.externalTaskRunnersDsn`.
+
+#### Action Required
+
+If you previously configured `diagnostics.externalTaskRunnersSentryDsn`, update your configuration to use `sentry.externalTaskRunnersDsn`. Ensure that any associated flags are enabled as needed.
+
+</details>
 
 {{ template "chart.requirementsSection" . }}
 
@@ -255,10 +286,10 @@ helm upgrade [RELEASE_NAME] community-charts/{{ template "chart.name" . }}
 
 ## Chart Development
 
-Please install unittest helm plugin with `helm plugin install https://github.com/helm-unittest/helm-unittest` command and use following command to run helm unit tests.
+Please install unittest helm plugin with `helm plugin install https://github.com/helm-unittest/helm-unittest.git` command and use following command to run helm unit tests.
 
 ```console
-helm unittest --strict --file unittests/**/*.yaml charts/{{ template "chart.name" . }}
+helm unittest --strict --file 'unittests/**/*.yaml' charts/{{ template "chart.name" . }}
 ```
 
 {{ template "chart.maintainersSection" . }}

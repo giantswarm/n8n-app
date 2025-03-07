@@ -41,17 +41,21 @@ podAnnotations: {}
 podLabels: {}
 
 # -- This is for setting Security Context to a Pod. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: "OnRootMismatch"
 
 # -- This is for setting Security Context to a Container. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  privileged: false
+  runAsUser: 1000
+  runAsGroup: 1000
 
 # -- This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
@@ -114,6 +118,16 @@ db:
     # -- Runs VACUUM operation on startup to rebuild the database. Reduces file size and optimizes indexes. This is a long running blocking operation and increases start-up time.
     vacuum: false
 
+sentry:
+  # -- Whether sentry is enabled.
+  enabled: false
+  # -- Sentry DSN for backend.
+  backendDsn: ""
+  # -- Sentry DSN for frontend.
+  frontendDsn: ""
+  # -- Sentry DSN for external task runners.
+  externalTaskRunnersDsn: ""
+
 diagnostics:
   # -- Whether diagnostics are enabled.
   enabled: false
@@ -163,6 +177,55 @@ webhook:
   # -- Webhook url together with http schema
   url: ""
 
+# -- Task runners mode. Please follow the documentation for more information: https://docs.n8n.io/hosting/configuration/task-runners/
+taskRunners:
+  # -- Use `internal` to use internal task runner, or use `external` to have external sidecar task runner. For more information please follow the documentation: https://docs.n8n.io/hosting/configuration/task-runners/#task-runner-modes
+  mode: internal
+  # -- The timeout for the task in seconds
+  taskTimeout: 60
+  # -- The heartbeat interval for the task in seconds
+  taskHeartbeatInterval: 30
+  # -- The maximum concurrency for the task
+  maxConcurrency: 5
+
+  # -- The address for the broker of the external task runner
+  broker:
+    # -- The address for the broker of the external task runner
+    address: "127.0.0.1"
+    # -- The port for the broker of the external task runner
+    port: 5679
+
+  # -- The configuration for the external task runner
+  external:
+    # -- The auth token for the main node
+    mainNodeAuthToken: ""
+    # -- The auth token for the worker node
+    workerNodeAuthToken: ""
+    # -- The auto shutdown timeout for the external task runner in seconds
+    autoShutdownTimeout: 15
+    # -- The port for the external task runner
+    port: 5680
+    # -- The node options for the external task runner
+    nodeOptions:
+      - "--max-semi-space-size=16"
+      - "--max-old-space-size=300"
+
+    # -- The resources for the external task runner
+    resources:
+      # -- The resources requests for the external task runner
+      requests:
+        # -- The CPU request for the external task runner
+        cpu: 100m
+        # -- The memory request for the external task runner
+        memory: 32Mi
+      # -- The limits for the external task runner
+      limits:
+        # -- The CPU limit for the external task runner
+        cpu: 2000m
+        # -- The memory limit for the external task runner
+        memory: 512Mi
+
+# -- The workflow history configuration
 workflowHistory:
   # -- Whether to save workflow history versions
   enabled: true

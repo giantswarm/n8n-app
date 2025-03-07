@@ -12,7 +12,7 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.name }}
       protocol: TCP
       name: {{ .Values.service.name }}
   selector:
@@ -33,7 +33,7 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.name }}
       protocol: TCP
       name: {{ .Values.service.name }}
   selector:

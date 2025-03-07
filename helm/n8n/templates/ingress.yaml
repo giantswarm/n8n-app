@@ -40,7 +40,7 @@ spec:
                   number: {{ $.Values.service.port }}
           {{- end }}
       {{- if and ($.Values.webhook.url) (and (eq $.Values.db.type "postgresdb") (eq $.Values.webhook.mode "queue")) }}
-      {{- $webhookUrl := $.Values.webhook.url | trimPrefix "http://" | trimPrefix "https://" }}
+      {{- $webhookUrl := $.Values.webhook.url | trimPrefix "http://" | trimPrefix "https://" | trimSuffix "/" }}
         {{- if and ((gt (len $.Values.ingress.hosts) 0)) (ne $webhookUrl .host) }}
     - host: {{ $webhookUrl | quote }}
       http:

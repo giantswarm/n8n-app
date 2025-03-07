@@ -1,0 +1,70 @@
+suite: test service
+
+templates:
+  - service.yaml
+
+release:
+  name: n8n
+  namespace: n8n
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+
+tests:
+  - it: should use different port number when we change it
+    set:
+      service:
+        port: 80
+    documentSelector:
+      path: metadata.name
+      value: n8n
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+
+  - it: should use different port name when we change it
+    set:
+      service:
+        name: differentname
+    documentSelector:
+      path: metadata.name
+      value: n8n
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: differentname
+
+  - it: should create webhook service when db type is postgresdb and webhook.mode is queue
+    set:
+      db:
+        type: postgresdb
+      webhook:
+        mode: queue
+      service:
+        name: n8n-webhook
+        port: 8080
+    documentSelector:
+      path: metadata.name
+      value: n8n-webhook
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: n8n-webhook
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: n8n-webhook
+
+  - it: should match snapshot of default values
+    set:
+      service:
+        annotations:
+          test-key: test-value
+    asserts:
+      - matchSnapshot: { }
