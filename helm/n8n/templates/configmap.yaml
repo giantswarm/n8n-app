@@ -46,9 +46,9 @@ data:
   N8N_LOG_LEVEL: {{ .Values.log.level | quote }}
   N8N_LOG_OUTPUT: {{ join "," .Values.log.output | quote }}
 {{- if has "file" .Values.log.output }}
-  N8N_LOG_FILE_COUNT_MAX: {{ .Values.log.maxcount | quote }}
-  N8N_LOG_FILE_SIZE_MAX: {{ .Values.log.maxsize | quote }}
-  N8N_LOG_FILE_LOCATION: {{ .Values.log.location | quote }}
+  N8N_LOG_FILE_COUNT_MAX: {{ .Values.log.file.maxcount | quote }}
+  N8N_LOG_FILE_SIZE_MAX: {{ .Values.log.file.maxsize | quote }}
+  N8N_LOG_FILE_LOCATION: {{ .Values.log.file.location | quote }}
 {{- end }}
 {{- if gt (len .Values.log.scopes) 0 }}
   N8N_LOG_SCOPES: {{ join "," .Values.log.scopes | quote }}
@@ -76,6 +76,16 @@ data:
   N8N_DIAGNOSTICS_CONFIG_BACKEND: ""
   N8N_DIAGNOSTICS_POSTHOG_API_KEY: ""
   N8N_DIAGNOSTICS_POSTHOG_API_HOST: ""
+{{- end }}
+{{- if .Values.sentry.enabled }}
+  N8N_SENTRY_DSN: {{ .Values.sentry.backendDsn | quote }}
+  N8N_FRONTEND_SENTRY_DSN: {{ .Values.sentry.frontendDsn | quote }}
+  N8N_VERSION: {{ default .Chart.AppVersion .Values.image.tag | quote }}
+  ENVIRONMENT: "production"
+  DEPLOYMENT_NAME: {{ .Release.Name | quote }}
+{{- else }}
+  N8N_SENTRY_DSN: ""
+  N8N_FRONTEND_SENTRY_DSN: ""
 {{- end }}
 
 ---
@@ -146,3 +156,55 @@ metadata:
 data:
   N8N_WORKFLOW_HISTORY_ENABLED: {{ .Values.workflowHistory.enabled | quote }}
   N8N_WORKFLOW_HISTORY_PRUNE_TIME: {{ .Values.workflowHistory.pruneTime | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "n8n.fullname" . }}-task-broker-configmap
+  labels:
+    app: {{ include "n8n.name" . }}
+    chart: {{ include "n8n.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  N8N_RUNNERS_ENABLED: "true"
+  N8N_RUNNERS_MODE: {{ .Values.taskRunners.mode | quote }}
+  N8N_RUNNERS_TASK_TIMEOUT: {{ .Values.taskRunners.taskTimeout | quote }}
+  N8N_RUNNERS_HEARTBEAT_INTERVAL: {{ .Values.taskRunners.taskHeartbeatInterval | quote }}
+{{- if eq .Values.taskRunners.mode "external" }}
+  N8N_RUNNERS_BROKER_LISTEN_ADDRESS: {{ .Values.taskRunners.broker.address | quote }}
+  N8N_RUNNERS_BROKER_PORT: {{ .Values.taskRunners.broker.port | quote }}
+{{- else }}
+  N8N_RUNNERS_MAX_CONCURRENCY: {{ .Values.taskRunners.maxConcurrency | quote }}
+{{- end }}
+
+{{- if eq .Values.taskRunners.mode "external" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "n8n.taskRunners.fullname" . }}-configmap
+  labels:
+    app: {{ include "n8n.name" . }}
+    chart: {{ include "n8n.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  N8N_RUNNERS_LAUNCHER_LOG_LEVEL: {{ .Values.log.level | quote }}
+  N8N_RUNNERS_MAX_CONCURRENCY: {{ .Values.taskRunners.maxConcurrency | quote }}
+  N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: {{ .Values.taskRunners.external.autoShutdownTimeout | quote }}
+  N8N_RUNNERS_TASK_TIMEOUT: {{ .Values.taskRunners.taskTimeout | quote }}
+  N8N_RUNNERS_TASK_BROKER_URI: {{ (printf "http://%s:%d" .Values.taskRunners.broker.address (.Values.taskRunners.broker.port | int)) | quote }}
+  N8N_RUNNERS_LAUNCHER_HEALTH_CHECK_PORT: {{ .Values.taskRunners.external.port | quote }}
+  NODE_OPTIONS: {{ .Values.taskRunners.external.nodeOptions | join " " | quote }}
+  GENERIC_TIMEZONE: {{ .Values.timezone | quote }}
+{{- if .Values.sentry.enabled }}
+  SENTRY_DSN: {{ .Values.sentry.externalTaskRunnersDsn | quote }}
+  N8N_VERSION: {{ default .Chart.AppVersion .Values.image.tag | quote }}
+  ENVIRONMENT: "production"
+  DEPLOYMENT_NAME: {{ .Release.Name | quote }}
+{{- else }}
+  SENTRY_DSN: ""
+{{- end }}
+{{- end }}

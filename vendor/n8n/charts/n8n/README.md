@@ -4,7 +4,7 @@
 
 A Helm chart for fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations.
 
-![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.75.2](https://img.shields.io/badge/AppVersion-1.75.2-informational?style=flat-square)
+![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.81.4](https://img.shields.io/badge/AppVersion-1.81.4-informational?style=flat-square)
 
 ## Get Helm Repository Info
 
@@ -26,6 +26,50 @@ _See [configuration](#configuration) below._
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
 > **Tip**: Search all available chart versions using `helm search repo community-charts -l`. Please don't forget to run `helm repo update` before the command.
+
+## Full Example
+
+```yaml
+log:
+  level: warn
+
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: n8n.mydomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+webhook:
+  mode: queue
+  url: "https://webhook.mydomain.com"
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 250Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+```
 
 ## Basic Deployment with Ingress
 
@@ -185,49 +229,36 @@ webhook:
   url: "https://webhook.mydomain.com"
 ```
 
-## Full Example
+## External Task Runner Example
+
+Please find more detail about external task runners from [here](https://docs.n8n.io/hosting/securing/hardening-task-runners/).
 
 ```yaml
-log:
-  level: warn
-
-db:
-  type: postgresdb
-
-externalPostgresql:
-  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
-  username: "n8nuser"
-  password: "Pa33w0rd!"
-  database: "n8n"
-
-worker:
-  mode: queue
-
-externalRedis:
-  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
-  username: "default"
-  password: "Pa33w0rd!"
-
-ingress:
-  enabled: true
-  hosts:
-    - host: n8n.mydomain.com
-      paths:
-        - path: /
-          pathType: Prefix
-
-webhook:
-  mode: queue
-  url: "https://webhook.mydomain.com"
-
-resources:
-  requests:
-    cpu: 1000m
-    memory: 250Mi
-  limits:
-    cpu: 2000m
-    memory: 2Gi
+taskRunners:
+  mode: external
 ```
+
+## Upgrading
+
+This section outlines major updates and breaking changes for each version of the Helm Chart to help you transition smoothly between releases.
+
+---
+
+### Version-Specific Upgrade Notes
+
+<details>
+
+<summary>Upgrading to 1.x.x</summary>
+
+#### Breaking Changes
+
+- The `diagnostics.externalTaskRunnersSentryDsn` setting has been relocated to `sentry.externalTaskRunnersDsn`.
+
+#### Action Required
+
+If you previously configured `diagnostics.externalTaskRunnersSentryDsn`, update your configuration to use `sentry.externalTaskRunnersDsn`. Ensure that any associated flags are enabled as needed.
+
+</details>
 
 ## Requirements
 
@@ -235,8 +266,8 @@ Kubernetes: `>=1.23.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://charts.bitnami.com/bitnami | postgresql | 16.4.5 |
-| https://charts.bitnami.com/bitnami | redis | 20.6.3 |
+| https://charts.bitnami.com/bitnami | postgresql | 16.4.16 |
+| https://charts.bitnami.com/bitnami | redis | 20.11.0 |
 
 ## Uninstall Helm Chart
 
@@ -312,7 +343,7 @@ helm upgrade [RELEASE_NAME] community-charts/n8n
 | nodeSelector | object | `{}` | For more information checkout: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector |
 | podAnnotations | object | `{}` | This is for setting Kubernetes Annotations to a Pod. For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ |
 | podLabels | object | `{}` | This is for setting Kubernetes Labels to a Pod. For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ |
-| podSecurityContext | object | `{}` | This is for setting Security Context to a Pod. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
+| podSecurityContext | object | `{"fsGroup":1000,"fsGroupChangePolicy":"OnRootMismatch"}` | This is for setting Security Context to a Pod. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | postgresql | object | `{"architecture":"standalone","auth":{"database":"n8n","password":"","username":""},"enabled":false,"primary":{"persistence":{"enabled":true,"existingClaim":""},"service":{"ports":{"postgresql":5432}}}}` | Bitnami PostgreSQL configuration |
 | postgresql.auth.database | string | `"n8n"` | The name of the PostgreSQL database. For more information: https://docs.n8n.io/hosting/configuration/supported-databases-settings/#required-permissions |
 | postgresql.enabled | bool | `false` | Enable postgresql |
@@ -320,7 +351,11 @@ helm upgrade [RELEASE_NAME] community-charts/n8n
 | redis | object | `{"architecture":"standalone","enabled":false,"master":{"persistence":{"enabled":false}}}` | Bitnami Redis configuration |
 | redis.enabled | bool | `false` | Enable redis |
 | resources | object | `{}` | This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
-| securityContext | object | `{}` | This is for setting Security Context to a Container. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":false,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000}` | This is for setting Security Context to a Container. For more information checkout: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
+| sentry.backendDsn | string | `""` | Sentry DSN for backend. |
+| sentry.enabled | bool | `false` | Whether sentry is enabled. |
+| sentry.externalTaskRunnersDsn | string | `""` | Sentry DSN for external task runners. |
+| sentry.frontendDsn | string | `""` | Sentry DSN for frontend. |
 | service | object | `{"annotations":{},"name":"http","port":5678,"type":"ClusterIP"}` | This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/ |
 | service.annotations | object | `{}` | Additional service annotations |
 | service.name | string | `"http"` | Default Service name |
@@ -332,6 +367,27 @@ helm upgrade [RELEASE_NAME] community-charts/n8n
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | strategy | object | `{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"}` | This will set the deployment strategy more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy |
+| taskRunners | object | `{"broker":{"address":"127.0.0.1","port":5679},"external":{"autoShutdownTimeout":15,"mainNodeAuthToken":"","nodeOptions":["--max-semi-space-size=16","--max-old-space-size=300"],"port":5680,"resources":{"limits":{"cpu":"2000m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"32Mi"}},"workerNodeAuthToken":""},"maxConcurrency":5,"mode":"internal","taskHeartbeatInterval":30,"taskTimeout":60}` | Task runners mode. Please follow the documentation for more information: https://docs.n8n.io/hosting/configuration/task-runners/ |
+| taskRunners.broker | object | `{"address":"127.0.0.1","port":5679}` | The address for the broker of the external task runner |
+| taskRunners.broker.address | string | `"127.0.0.1"` | The address for the broker of the external task runner |
+| taskRunners.broker.port | int | `5679` | The port for the broker of the external task runner |
+| taskRunners.external | object | `{"autoShutdownTimeout":15,"mainNodeAuthToken":"","nodeOptions":["--max-semi-space-size=16","--max-old-space-size=300"],"port":5680,"resources":{"limits":{"cpu":"2000m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"32Mi"}},"workerNodeAuthToken":""}` | The configuration for the external task runner |
+| taskRunners.external.autoShutdownTimeout | int | `15` | The auto shutdown timeout for the external task runner in seconds |
+| taskRunners.external.mainNodeAuthToken | string | `""` | The auth token for the main node |
+| taskRunners.external.nodeOptions | list | `["--max-semi-space-size=16","--max-old-space-size=300"]` | The node options for the external task runner |
+| taskRunners.external.port | int | `5680` | The port for the external task runner |
+| taskRunners.external.resources | object | `{"limits":{"cpu":"2000m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"32Mi"}}` | The resources for the external task runner |
+| taskRunners.external.resources.limits | object | `{"cpu":"2000m","memory":"512Mi"}` | The limits for the external task runner |
+| taskRunners.external.resources.limits.cpu | string | `"2000m"` | The CPU limit for the external task runner |
+| taskRunners.external.resources.limits.memory | string | `"512Mi"` | The memory limit for the external task runner |
+| taskRunners.external.resources.requests | object | `{"cpu":"100m","memory":"32Mi"}` | The resources requests for the external task runner |
+| taskRunners.external.resources.requests.cpu | string | `"100m"` | The CPU request for the external task runner |
+| taskRunners.external.resources.requests.memory | string | `"32Mi"` | The memory request for the external task runner |
+| taskRunners.external.workerNodeAuthToken | string | `""` | The auth token for the worker node |
+| taskRunners.maxConcurrency | int | `5` | The maximum concurrency for the task |
+| taskRunners.mode | string | `"internal"` | Use `internal` to use internal task runner, or use `external` to have external sidecar task runner. For more information please follow the documentation: https://docs.n8n.io/hosting/configuration/task-runners/#task-runner-modes |
+| taskRunners.taskHeartbeatInterval | int | `30` | The heartbeat interval for the task in seconds |
+| taskRunners.taskTimeout | int | `60` | The timeout for the task in seconds |
 | timezone | string | `"Europe/Berlin"` | For instance, the Schedule node uses it to know at what time the workflow should start. Find you timezone from here: https://momentjs.com/timezone/ |
 | tolerations | list | `[]` | For more information checkout: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/ |
 | versionNotifications.enabled | bool | `false` | Whether to request notifications about new n8n versions |
@@ -345,6 +401,7 @@ helm upgrade [RELEASE_NAME] community-charts/n8n
 | worker.concurrency | int | `10` | number of concurrency for each worker |
 | worker.count | int | `2` | number of workers |
 | worker.mode | string | `"regular"` | Use `regular` to use main node as executer, or use `queue` to have worker nodes |
+| workflowHistory | object | `{"enabled":true,"pruneTime":336}` | The workflow history configuration |
 | workflowHistory.enabled | bool | `true` | Whether to save workflow history versions |
 | workflowHistory.pruneTime | int | `336` | Time (in hours) to keep workflow history versions for. To disable it, use -1 as a value |
 
@@ -357,10 +414,10 @@ helm upgrade [RELEASE_NAME] community-charts/n8n
 
 ## Chart Development
 
-Please install unittest helm plugin with `helm plugin install https://github.com/helm-unittest/helm-unittest` command and use following command to run helm unit tests.
+Please install unittest helm plugin with `helm plugin install https://github.com/helm-unittest/helm-unittest.git` command and use following command to run helm unit tests.
 
 ```console
-helm unittest --strict --file unittests/**/*.yaml charts/n8n
+helm unittest --strict --file 'unittests/**/*.yaml' charts/n8n
 ```
 
 ## Maintainers

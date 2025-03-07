@@ -1,0 +1,281 @@
+suite: test ingress
+
+templates:
+  - ingress.yaml
+
+release:
+  name: n8n
+  namespace: n8n
+
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+
+set:
+  ingress:
+    enabled: true
+
+tests:
+  - it: should not create ingress resource when ingress.enabled is false
+    set:
+      ingress:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should set annotations when ingress.annotations is set
+    set:
+      ingress:
+        annotations:
+          test-key: test-value
+    asserts:
+      - equal:
+          path: metadata.annotations.test-key
+          value: test-value
+
+  - it: should set ingressClassName when ingress.className is set
+    set:
+      ingress:
+        className: test
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: test
+
+  - it: should set tls when ingress.tls is set
+    set:
+      ingress:
+        tls:
+          - secretName: test-tls-secret
+            hosts:
+              - myn8ndomain.com
+    asserts:
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: myn8ndomain.com
+      - equal:
+          path: spec.tls[0].secretName
+          value: test-tls-secret
+
+  - it: should set hosts when ingress.hosts is set
+    set:
+      service:
+        port: 80
+      ingress:
+        hosts:
+          - host: myn8ndomain.com
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: myn8ndomain.com
+            http:
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+
+  - it: should set webhook ingress when webhook.url is set and db type is postgresdb and webhook.mode is queue
+    set:
+      service:
+        port: 80
+      ingress:
+        hosts:
+          - host: myn8ndomain.com
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+      webhook:
+        mode: queue
+        url: https://webhook.mydomain.com
+      db:
+        type: postgresdb
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: webhook.mydomain.com
+            http:
+              paths:
+                - path: /webhook/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+                - path: /webhook-test/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook-waiting/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+
+  - it: should not create additional ingress when webhook.url is set and ingress.hosts is same as webhook.url
+    set:
+      service:
+        port: 80
+      ingress:
+        hosts:
+          - host: myn8ndomain.com
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+      webhook:
+        mode: queue
+        url: http://myn8ndomain.com
+      db:
+        type: postgresdb
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: myn8ndomain.com
+            http:
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+                - path: /webhook-test/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook-waiting/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+
+  - it: should not create additional ingress when webhook.url is set with https and ingress.hosts is same as webhook.url
+    set:
+      service:
+        port: 80
+      ingress:
+        hosts:
+          - host: myn8ndomain.com
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+      webhook:
+        mode: queue
+        url: https://myn8ndomain.com
+      db:
+        type: postgresdb
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: myn8ndomain.com
+            http:
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+                - path: /webhook-test/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook-waiting/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+
+  - it: should not create additional ingress when webhook.url is set with slash at the end and ingress.hosts is same as webhook.url
+    set:
+      service:
+        port: 80
+      ingress:
+        hosts:
+          - host: myn8ndomain.com
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+      webhook:
+        mode: queue
+        url: http://myn8ndomain.com/
+      db:
+        type: postgresdb
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: myn8ndomain.com
+            http:
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80
+                - path: /webhook-test/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n
+                      port:
+                        number: 80
+                - path: /webhook-waiting/
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: n8n-webhook
+                      port:
+                        number: 80

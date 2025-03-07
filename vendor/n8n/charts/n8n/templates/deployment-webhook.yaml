@@ -46,7 +46,7 @@ spec:
           command: ["n8n"]
           args: ["webhook"]
           ports:
-            - name: http
+            - name: {{ .Values.service.name }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
@@ -102,6 +102,16 @@ spec:
                   name: {{ default (include "n8n.redis.fullname" .) .Values.externalRedis.existingSecret }}
                   key: redis-password
                   optional: true
+            - name: N8N_RUNNERS_ENABLED
+              value: "true"
+            - name: N8N_RUNNERS_MODE
+              value: internal
+            - name: N8N_RUNNERS_TASK_TIMEOUT
+              value: {{ .Values.taskRunners.taskTimeout | quote }}
+            - name: N8N_RUNNERS_HEARTBEAT_INTERVAL
+              value: {{ .Values.taskRunners.taskHeartbeatInterval | quote }}
+            - name: N8N_RUNNERS_MAX_CONCURRENCY
+              value: {{ .Values.taskRunners.maxConcurrency | quote }}
           {{- range $key, $value := .Values.extraEnvVars }}
             - name: {{ upper $key }}
               value: {{ $value | quote }}

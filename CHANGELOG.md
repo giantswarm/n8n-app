@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- upgraded the upstream helm chart to 1.1.0
+
 ## [0.1.6] - 2025-01-30
 
 ## [0.1.5] - 2025-01-29

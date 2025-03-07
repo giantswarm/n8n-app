@@ -20,6 +20,9 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- if eq .Values.taskRunners.mode "external" }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- end }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -43,7 +46,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
+            - name: {{ .Values.service.name }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
@@ -99,6 +102,13 @@ spec:
             - name: WEBHOOK_URL
               value: {{ .Values.webhook.url | quote }}
           {{- end }}
+          {{- if eq .Values.taskRunners.mode "external" }}
+            - name: N8N_RUNNERS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "n8n.taskRunners.fullname" . }}-secret
+                  key: auth-token
+          {{- end }}
           {{- range $key, $value := .Values.extraEnvVars }}
             - name: {{ upper $key }}
               value: {{ $value | quote }}
@@ -120,6 +130,8 @@ spec:
           {{- end }}
             - configMapRef:
                 name: {{ template "n8n.fullname" . }}-workflow-history-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-task-broker-configmap
             - secretRef:
                 name: {{ template "n8n.fullname" . }}-encryption-key-secret
           {{- range .Values.extraSecretNamesForEnvFrom }}
@@ -130,6 +142,36 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+      {{- if eq .Values.taskRunners.mode "external" }}
+        - name: {{ template "n8n.taskRunners.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/usr/local/bin/task-runner-launcher"]
+          args: ["javascript"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.taskRunners.external.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            {{- toYaml .Values.taskRunners.external.resources | nindent 12 }}
+          env:
+            - name: N8N_RUNNERS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "n8n.taskRunners.fullname" . }}-secret
+                  key: auth-token
+          envFrom:
+            - configMapRef:
+                name: {{ template "n8n.taskRunners.fullname" . }}-configmap
+      {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
