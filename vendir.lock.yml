@@ -2,10 +2,10 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - git:
-      commitTitle: Fix same folder usage for two volume mounts settings problem
-      sha: abbd694f1dade2566a7474a7dba1824e44b3c7d6
+      commitTitle: Add lock file for pypi server chart
+      sha: 134e48134559de2c6813ca405d1e8adf576ff802
       tags:
-      - mlflow-0.14.1
+      - cloudflared-2.0.2-1-g134e481
     path: n8n
   path: vendor
 - contents:
