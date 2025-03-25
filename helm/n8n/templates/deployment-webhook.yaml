@@ -9,6 +9,8 @@ metadata:
   name: {{ include "n8n.webhook.fullname" . }}
   labels:
     {{- include "n8n.webhook.labels" . | nindent 4 }}
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
 spec:
   {{- if and .Values.webhook.allNodes (eq .Values.strategy.type "RollingUpdate") }}
   updateStrategy:
