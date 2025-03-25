@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2025-03-25
+
 ## [0.2.0] - 2025-03-07
 
 - upgraded the upstream helm chart to 1.1.0
@@ -25,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - changed: `app.giantswarm.io` label group was changed to `application.giantswarm.io`
 
-[Unreleased]: https://github.com/giantswarm/n8n-app/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/giantswarm/n8n-app/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/giantswarm/n8n-app/compare/v0.2.0...v1.5.1
 [0.2.0]: https://github.com/giantswarm/n8n-app/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/giantswarm/n8n-app/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/giantswarm/n8n-app/compare/v0.1.4...v0.1.5
