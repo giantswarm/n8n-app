@@ -42,8 +42,26 @@ externalPostgresql:
   password: "Pa33w0rd!"
   database: "n8n"
 
+main:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 512m
+      memory: 512Mi
+
 worker:
   mode: queue
+  autoscaling:
+    enabled: true
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 250Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
 
 externalRedis:
   host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
@@ -61,14 +79,15 @@ ingress:
 webhook:
   mode: queue
   url: "https://webhook.mydomain.com"
-
-resources:
-  requests:
-    cpu: 1000m
-    memory: 250Mi
-  limits:
-    cpu: 2000m
-    memory: 2Gi
+  autoscaling:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 512m
+      memory: 512Mi
 ```
 
 ## Basic Deployment with Ingress
@@ -238,27 +257,244 @@ taskRunners:
   mode: external
 ```
 
+## Autoscaling Configuration  
+
+> **Note:** The `autoscaling` and `allNodes` options cannot be enabled simultaneously.  
+
+### Deploying Worker and Webhook Pods on All Nodes  
+
+To deploy worker or webhook pods on all Kubernetes nodes, set the `allNodes` flag to `true`:  
+
+```yaml
+db:
+  type: postgresdb
+
+worker:
+  mode: queue
+  allNodes: true
+
+webhook:
+  mode: queue
+  allNodes: true
+```
+
+### Enabling Autoscaling  
+
+To enable autoscaling, set the `enabled` field under `autoscaling` to `true`:  
+
+```yaml
+db:
+  type: postgresdb
+
+worker:
+  mode: queue
+  autoscaling:
+    enabled: true
+
+webhook:
+  mode: queue
+  autoscaling:
+    enabled: true
+```
+
+Ensure that you configure either `allNodes` or `autoscaling` based on your deployment requirements.
+
+## Service Monitor Examples
+
+The n8n Helm chart supports optional integration with Prometheus via `ServiceMonitor` and `PodMonitor` resources, compatible with the Prometheus Operator (API version `monitoring.coreos.com/v1`). These resources allow Prometheus to scrape metrics from n8n services and worker pods. This section provides examples to help you enable and configure monitoring.
+
+### Prerequisites
+
+* The Prometheus Operator must be installed in your cluster.
+* Your Prometheus instance must be configured to discover `ServiceMonitor` and `PodMonitor` resources (e.g., via a matching `release` label).
+
+### Enabling the ServiceMonitor
+
+To enable monitoring, set `serviceMonitor.enabled` to `true` in your `values.yaml` file or via a Helm override. By default, the `ServiceMonitor` is disabled (`false`).
+
+#### Basic Example
+
+Enable the `ServiceMonitor` with default settings:
+
+```yaml
+serviceMonitor:
+  enabled: true
+```
+
+This deploys a `ServiceMonitor` in the same namespace as the chart (e.g., `n8n`), scraping the n8n service's `/metrics` endpoint every 30 seconds with a 10-second timeout. The default label `release: prometheus` is applied, which should match your Prometheus instance's service monitor selector.
+
+#### Custom Namespace and Interval
+
+Deploy the `ServiceMonitor` in a specific namespace (e.g., `monitoring`) with a custom scrape interval:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 1m
+```
+
+This scrapes metrics every minute from the n8n service in the release namespace (e.g., `n8n`), with the `ServiceMonitor` itself residing in the `monitoring` namespace.
+
+#### Relabeling Metrics
+
+Add custom metric relabeling to drop unwanted labels:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  labels:
+    release: my-prometheus
+  metricRelabelings:
+    - regex: prometheus_replica
+      action: labeldrop
+```
+
+This deploys a `ServiceMonitor` with a custom `release: my-prometheus` label and drops the `prometheus_replica` label from scraped metrics.
+
+### Enabling the PodMonitor (Worker Mode)
+
+If using a PostgreSQL database (`db.type: postgresdb`) and queue mode (`worker.mode: queue`), a `PodMonitor` is available to scrape metrics from n8n worker pods.
+
+#### Worker Monitoring Example
+
+Enable both `ServiceMonitor` and `PodMonitor` for a full setup:
+
+```yaml
+db:
+  type: postgresdb
+
+externalPostgresql:
+  host: "postgresql-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "n8nuser"
+  password: "Pa33w0rd!"
+  database: "n8n"
+
+worker:
+  mode: queue
+
+externalRedis:
+  host: "redis-instance1.ab012cdefghi.eu-central-1.rds.amazonaws.com"
+  username: "default"
+  password: "Pa33w0rd!"
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  timeout: 5s
+```
+
+This scrapes the main n8n service and worker pods every 15 seconds with a 5-second timeout. The `PodMonitor` targets worker pods with the label `role: worker`.
+
+### Troubleshooting
+
+* Ensure the `release` label matches your Prometheus configuration (see [Prometheus Operator docs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/troubleshooting.md#troubleshooting-servicemonitor-changes)).
+* Verify RBAC permissions for the Prometheus service account (e.g., system:serviceaccount:monitoring:prometheus-k8s) to list/watch Pods, Services, and Endpoints. You can use something similar as the following command.
+
+```bash
+kubectl auth can-i list pods --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+kubectl auth can-i list services --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+kubectl auth can-i list endpoints --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+
+kubectl auth can-i watch pods --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+kubectl auth can-i watch services --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+kubectl auth can-i watch endpoints --namespace n8n --as=system:serviceaccount:monitoring:prometheus-k8s
+```
+
+## Enterprise License Configuration
+
+The chart now supports enterprise license configuration. To enable and configure it, update the `values.yaml` file:
+
+```yaml
+license:
+  enabled: true
+  activationKey: "your-activation-key"
+```
+
+If you have an existing secret for the activation key with `N8N_LICENSE_ACTIVATION_KEY` secret key, configure it as follows:
+
+```yaml
+license:
+  enabled: true
+  existingActivationKeySecret: "your-existing-secret"
+```
+
+## S3 Binary Storage Configuration
+
+The chart now supports storing binary data in S3-compatible external storage. To enable and configure it, update the `values.yaml` file:
+
+```yaml
+binaryData:
+  availableModes:
+    - s3
+  mode: "s3"
+  s3:
+    host: "s3.us-east-1.amazonaws.com"
+    bucketName: "your-bucket-name"
+    bucketRegion: "us-east-1"
+    accessKey: "your-access-key"
+    accessSecret: "your-secret-access-key"
+```
+
+If you have an existing secret for the s3 access key and access secret with `access-key-id` and `secret-access-key` seret key names respectively, configure it as follows:
+
+```yaml
+binaryData:
+  availableModes:
+    - s3
+  mode: "s3"
+  s3:
+    host: "s3.us-east-1.amazonaws.com"
+    bucketName: "your-bucket-name"
+    bucketRegion: "us-east-1"
+    existingSecret: "your-existing-secret"
+```
+
 ## Upgrading
 
 This section outlines major updates and breaking changes for each version of the Helm Chart to help you transition smoothly between releases.
 
 ---
 
-### Version-Specific Upgrade Notes
+###  Version-Specific Upgrade Notes
 
-<details>
+#### Upgrading to Version 1.3.1
 
-<summary>Upgrading to 1.x.x</summary>
+##### Deprecation Notices
 
-#### Breaking Changes
+* **Secret Name Change**: The secret `RELEASE_NAME-encryption-key-secret` is deprecated. Starting with this release, the chart now uses `RELEASE_NAME-encryption-key-secret-v2` to manage the `N8N_ENCRYPTION_KEY`. This change ensures compatibility with Helm’s resource ownership model and resolves previous upgrade issues.
+
+##### Actions Required
+
+* **Verify the Upgrade**: After successfully upgrading to version 1.3.1, confirm that your `n8n` deployment is using the new secret (`RELEASE_NAME-encryption-key-secret-v2`). The old secret (`RELEASE_NAME-encryption-key-secret`) is preserved in the namespace and will not be automatically deleted.
+* **Optional Cleanup**: If the old secret is no longer needed, you may manually remove it from your namespace using the following command:
+bash
+
+```bash
+kubectl delete secret RELEASE_NAME-encryption-key-secret -n YOUR_NAMESPACE
+```
+
+Replace `RELEASE_NAME` and `YOUR_NAMESPACE` with your specific release name and namespace.
+
+#### Upgrading to Version 1.2.x
+
+##### Deprecation Notices
+
+- The top-level fields `extraEnvVars`, `extraSecretNamesForEnvFrom`, `resources`, `volumes` and `volumeMounts` are deprecated.
+
+##### Action Required
+
+Please consider using the corresponding fields in the `main`, `worker` and `webhook` blocks instead. The deprecated fields will be removed in the next major release.
+
+#### Upgrading to Version 1.x.x
+
+##### Breaking Changes
 
 - The `diagnostics.externalTaskRunnersSentryDsn` setting has been relocated to `sentry.externalTaskRunnersDsn`.
 
-#### Action Required
+##### Action Required
 
 If you previously configured `diagnostics.externalTaskRunnersSentryDsn`, update your configuration to use `sentry.externalTaskRunnersDsn`. Ensure that any associated flags are enabled as needed.
-
-</details>
 
 {{ template "chart.requirementsSection" . }}
 

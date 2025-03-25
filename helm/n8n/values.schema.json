@@ -45,6 +45,93 @@
       "title": "api",
       "type": "object"
     },
+    "binaryData": {
+      "additionalProperties": false,
+      "description": "n8n binary data configurations",
+      "properties": {
+        "availableModes": {
+          "default": [],
+          "description": "Available modes of binary data storage. If not set, the default mode will be used. For more information, see https://docs.n8n.io/hosting/configuration/environment-variables/binary-data/",
+          "required": [],
+          "title": "availableModes",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["filesystem", "s3"]
+          }
+        },
+        "mode": {
+          "default": "default",
+          "description": "The default binary data mode. default keeps binary data in memory. Set to filesystem to use the filesystem, or s3 to AWS S3. Note that binary data pruning operates on the active binary data mode. For example, if your instance stored data in S3, and you later switched to filesystem mode, n8n only prunes binary data in the filesystem. This may change in future. Valid values are 'default' | 'filesystem' | 's3'. For more information, see https://docs.n8n.io/hosting/configuration/environment-variables/binary-data/",
+          "required": [],
+          "title": "mode",
+          "type": "string",
+          "enum": ["default", "filesystem", "s3"]
+        },
+        "localStoragePath": {
+          "default": "",
+          "description": "Path for binary data storage in 'filesystem' mode. If not set, the default path will be used. For more information, see https://docs.n8n.io/hosting/configuration/environment-variables/binary-data/",
+          "required": [],
+          "title": "localStoragePath",
+          "type": "string"
+        },
+        "s3": {
+          "additionalProperties": false,
+          "description": "S3-compatible external storage configurations. For more information, see https://docs.n8n.io/hosting/configuration/environment-variables/external-data-storage/",
+          "properties": {
+            "host": {
+              "default": "",
+              "description": "Host of the n8n bucket in S3-compatible external storage. For example, s3.us-east-1.amazonaws.com",
+              "required": [],
+              "title": "host",
+              "type": "string"
+            },
+            "bucketName": {
+              "default": "",
+              "description": "Name of the n8n bucket in S3-compatible external storage.",
+              "required": [],
+              "title": "bucketName",
+              "type": "string"
+            },
+            "bucketRegion": {
+              "default": "us-east-1",
+              "pattern": "^[a-z]{2}-[a-z]+-\\d+$",
+              "description": "Region of the S3-compatible external storage bucket. For example, us-east-1",
+              "required": [],
+              "title": "bucketRegion",
+              "type": "string"
+            },
+            "accessKey": {
+              "default": "",
+              "description": "Access key in S3-compatible external storage",
+              "required": [],
+              "title": "accessKey",
+              "type": "string"
+            },
+            "accessSecret": {
+              "default": "",
+              "description": "Access secret in S3-compatible external storage",
+              "required": [],
+              "title": "accessSecret",
+              "type": "string"
+            },
+            "existingSecret": {
+              "default": "",
+              "description": "This is for setting up the s3 file storage existing secret. Must contain access-key-id and secret-access-key keys.",
+              "required": [],
+              "title": "existingSecret",
+              "type": "string"
+            }
+          },
+          "required": ["host", "bucketName", "bucketRegion", "accessKey", "accessSecret", "existingSecret"],
+          "title": "s3",
+          "type": "object"
+        }
+      },
+      "required": ["mode", "localStoragePath", "s3"],
+      "title": "binaryData",
+      "type": "object"
+    },
     "db": {
       "additionalProperties": false,
       "description": "n8n database configurations",
@@ -305,6 +392,13 @@
       "title": "encryptionKey",
       "type": "string"
     },
+    "existingEncryptionKeySecret": {
+      "default": "",
+      "description": "The name of an existing secret with encryption key. The secret must contain a key with the name N8N_ENCRYPTION_KEY.",
+      "required": [],
+      "title": "existingEncryptionKeySecret",
+      "type": "string"
+    },
     "externalPostgresql": {
       "additionalProperties": false,
       "description": "External PostgreSQL parameters",
@@ -409,13 +503,13 @@
     },
     "extraEnvVars": {
       "additionalProperties": true,
-      "description": "Extra environment variables",
+      "description": "DEPRECATED: Use main, worker, and webhook blocks extraEnvVars fields instead. This field will be removed in a future release.",
       "required": [],
       "title": "extraEnvVars",
       "type": "object"
     },
     "extraSecretNamesForEnvFrom": {
-      "description": "Extra secrets for environment variables",
+      "description": "DEPRECATED: Use main, worker, and webhook blocks extraSecretNamesForEnvFrom fields instead. This field will be removed in a future release.",
       "items": {
         "required": []
       },
@@ -679,6 +773,239 @@
       "title": "log",
       "type": "object"
     },
+    "license": {
+      "additionalProperties": false,
+      "description": "n8n license configurations",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Whether to enable the license",
+          "required": [],
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "activationKey": {
+          "description": "Activation key to initialize license. Not applicable if the n8n instance was already activated. For more information please refer to the following link: https://docs.n8n.io/enterprise-key/",
+          "required": [],
+          "title": "activationKey",
+          "type": "string"
+        },
+        "existingActivationKeySecret": {
+          "description": "The name of an existing secret with license activation key. The secret must contain a key with the name N8N_LICENSE_ACTIVATION_KEY.",
+          "required": [],
+          "title": "existingActivationKeySecret",
+          "type": "string"
+        },
+        "autoNenew": {
+          "description": "The auto new license configuration",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enables (true) or disables (false) autorenewal for licenses. If disabled, you need to manually renew the license every 10 days by navigating to Settings > Usage and plan, and pressing F5. Failure to renew the license will disable Enterprise features.",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "offsetInHours": {
+              "default": 72,
+              "description": "The offset in hours before expiry a license should automatically renew. The default value is 72 hours (3 days).",
+              "required": [],
+              "title": "offsetInHours",
+              "type": "integer"
+            }
+          },
+          "required": ["enabled", "offsetInHours"],
+          "title": "autoNenew",
+          "type": "object"
+        },
+        "serverUrl": {
+          "description": "Server URL to retrieve license. The default value is https://license.n8n.io/v1.",
+          "required": [],
+          "title": "serverUrl",
+          "type": "string"
+        },
+        "tenantId": {
+          "description": "Tenant ID associated with the license. Only set this variable if explicitly instructed by n8n.",
+          "required": [],
+          "title": "tenantId",
+          "type": "integer"
+        }
+      },
+      "required": ["enabled", "activationKey", "existingActivationKeySecret", "autoNenew", "serverUrl", "tenantId"],
+      "title": "license",
+      "type": "object"
+    },
+    "main": {
+      "additionalProperties": false,
+      "description": "Main node configuration",
+      "properties": {
+        "count": {
+          "default": 1,
+          "description": "Number of main nodes. Only enterprise license users can have one leader main node and mutiple follower main nodes.",
+          "required": [],
+          "title": "count",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pdb": {
+          "additionalProperties": false,
+          "description": "PodDisruptionBudget configuration for the main node",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Whether to enable the PodDisruptionBudget for the main node",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "default": 1,
+              "description": "Minimum number of available replicas for the main node",
+              "required": [],
+              "title": "minAvailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxUnavailable": {
+              "default": null,
+              "description": "Maximum number of unavailable replicas for the main node",
+              "required": [],
+              "title": "maxUnavailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["enabled"],
+          "title": "pdb",
+          "type": "object",
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": ["enabled"]
+          },
+          "then": {
+            "not": {
+              "properties": {
+                "minAvailable": { "type": "null" },
+                "maxUnavailable": { "type": "null" }
+              },
+              "required": ["minAvailable", "maxUnavailable"]
+            }
+          }
+        },
+        "resources": {
+          "additionalProperties": true,
+          "description": "This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "properties": {
+            "limits": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "2000m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "2Gi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "extraEnvVars": {
+          "additionalProperties": true,
+          "description": "Extra environment variables",
+          "required": [],
+          "title": "extraEnvVars",
+          "type": "object"
+        },
+        "extraSecretNamesForEnvFrom": {
+          "description": "Extra secrets for environment variables",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "extraSecretNamesForEnvFrom",
+          "type": "array"
+        },
+        "volumes": {
+          "description": "Additional volumes on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumes",
+          "type": "array"
+        },
+        "volumeMounts": {
+          "description": "Additional volumeMounts on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumeMounts",
+          "type": "array"
+        }
+      },
+      "required": ["count", "resources", "extraEnvVars", "extraSecretNamesForEnvFrom", "volumes", "volumeMounts", "pdb"],
+      "title": "main",
+      "type": "object"
+    },
     "nameOverride": {
       "default": "",
       "description": "This is to override the chart name.",
@@ -923,7 +1250,7 @@
     },
     "resources": {
       "additionalProperties": true,
-      "description": "This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "description": "DEPRECATED: Use main, worker, and webhook blocks resources fields instead. This field will be removed in a future release.",
       "properties": {
         "limits": {
           "additionalProperties": true,
@@ -1164,7 +1491,7 @@
       "type": "object"
     },
     "volumeMounts": {
-      "description": "Additional volumeMounts on the output Deployment definition.",
+      "description": "DEPRECATED: Use main, worker, and webhook blocks volumeMounts fields instead. This field will be removed in a future release.",
       "items": {
         "required": []
       },
@@ -1173,7 +1500,7 @@
       "type": "array"
     },
     "volumes": {
-      "description": "Additional volumes on the output Deployment definition.",
+      "description": "DEPRECATED: Use main, worker, and webhook blocks volumes fields instead. This field will be removed in a future release.",
       "items": {
         "required": []
       },
@@ -1200,15 +1527,521 @@
           "type": "string",
           "enum": ["regular", "queue"]
         },
+        "allNodes": {
+          "default": false,
+          "description": "If true, all k8s nodes will deploy exatly one worker pod",
+          "required": [],
+          "title": "allNodes",
+          "type": "boolean"
+        },
+        "autoscaling": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "If true, the number of workers will be automatically scaled based on default metrics. On default, it will scale based on CPU and memory. For more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "minReplicas": {
+              "default": 1,
+              "description": "Minimum number of workers",
+              "required": [],
+              "title": "minReplicas",
+              "type": "integer"
+            },
+            "maxReplicas": {
+              "default": 10,
+              "description": "Maximum number of workers",
+              "required": [],
+              "title": "maxReplicas",
+              "type": "integer"
+            },
+            "metrics": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["Resource", "Pods", "Object", "External"]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "properties": {
+                      "type": { "const": "Resource" },
+                      "resource": {
+                        "type": "object",
+                        "required": ["name", "target"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": ["cpu", "memory"]
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": ["Utilization", "AverageValue", "Value"]
+                              },
+                              "averageUtilization": { "type": "integer", "minimum": 0 },
+                              "averageValue": { "type": "string" },
+                              "value": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Utilization" } } },
+                            "then": { "required": ["averageUtilization"] },
+                            "else": {
+                              "if": { "properties": { "type": { "const": "AverageValue" } } },
+                              "then": { "required": ["averageValue"] },
+                              "else": { "required": ["value"] }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["resource"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "Pods" },
+                      "pods": {
+                        "type": "object",
+                        "required": ["metric", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["AverageValue", "Value"] },
+                              "averageValue": { "type": "string" },
+                              "value": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "AverageValue" } } },
+                            "then": { "required": ["averageValue"] },
+                            "else": { "required": ["value"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["pods"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "Object" },
+                      "object": {
+                        "type": "object",
+                        "required": ["metric", "describedObject", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "describedObject": {
+                            "type": "object",
+                            "required": ["apiVersion", "kind", "name"],
+                            "properties": {
+                              "apiVersion": { "type": "string" },
+                              "kind": { "type": "string" },
+                              "name": { "type": "string" }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["Value", "AverageValue"] },
+                              "value": { "type": "string" },
+                              "averageValue": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Value" } } },
+                            "then": { "required": ["value"] },
+                            "else": { "required": ["averageValue"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["object"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "External" },
+                      "external": {
+                        "type": "object",
+                        "required": ["metric", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["Value", "AverageValue"] },
+                              "value": { "type": "string" },
+                              "averageValue": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Value" } } },
+                            "then": { "required": ["value"] },
+                            "else": { "required": ["averageValue"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["external"]
+                  }
+                ]
+              }
+            },
+            "behavior": {
+              "type": "object",
+              "properties": {
+                "scaleUp": {
+                  "type": "object",
+                  "properties": {
+                    "stabilizationWindowSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Time in seconds to wait before scaling up again (default: 0)"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "minItems": 1,
+                        "required": ["type", "value", "periodSeconds"],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["Pods", "Percent"],
+                            "description": "Type of scaling policy: Pods (fixed number) or Percent (percentage of current replicas)"
+                          },
+                          "value": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "The value to scale by (number of pods or percentage)"
+                          },
+                          "periodSeconds": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Time in seconds over which the policy is evaluated"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "description": "List of scaling policies for scale-up"
+                    },
+                    "selectPolicy": {
+                      "type": "string",
+                      "enum": ["Max", "Min", "Disabled"],
+                      "description": "Policy to select among multiple policies: Max (default), Min, or Disabled"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "scaleDown": {
+                  "type": "object",
+                  "properties": {
+                    "stabilizationWindowSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Time in seconds to wait before scaling down again (default: 300)"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "minItems": 1,
+                        "required": ["type", "value", "periodSeconds"],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["Pods", "Percent"],
+                            "description": "Type of scaling policy: Pods (fixed number) or Percent (percentage of current replicas)"
+                          },
+                          "value": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "The value to scale by (number of pods or percentage)"
+                          },
+                          "periodSeconds": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Time in seconds over which the policy is evaluated"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "description": "List of scaling policies for scale-down"
+                    },
+                    "selectPolicy": {
+                      "type": "string",
+                      "enum": ["Max", "Min", "Disabled"],
+                      "description": "Policy to select among multiple policies: Max (default), Min, or Disabled"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["enabled", "minReplicas", "maxReplicas", "metrics", "behavior"],
+          "title": "autoscaling",
+          "type": "object"
+        },
+        "pdb": {
+          "additionalProperties": false,
+          "description": "PodDisruptionBudget configuration for the worker node",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Whether to enable the PodDisruptionBudget for the worker node",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "default": 1,
+              "description": "Minimum number of available replicas for the worker node",
+              "required": [],
+              "title": "minAvailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxUnavailable": {
+              "default": null,
+              "description": "Maximum number of unavailable replicas for the worker node",
+              "required": [],
+              "title": "maxUnavailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["enabled"],
+          "title": "pdb",
+          "type": "object",
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": ["enabled"]
+          },
+          "then": {
+            "not": {
+              "properties": {
+                "minAvailable": { "type": "null" },
+                "maxUnavailable": { "type": "null" }
+              },
+              "required": ["minAvailable", "maxUnavailable"]
+            }
+          }
+        },
         "url": {
           "default": "",
           "description": "Webhook url together with http schema",
           "required": [],
           "title": "url",
           "type": "string"
+        },
+        "resources": {
+          "additionalProperties": true,
+          "description": "This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "properties": {
+            "limits": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "2000m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "2Gi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "extraEnvVars": {
+          "additionalProperties": true,
+          "description": "Extra environment variables",
+          "required": [],
+          "title": "extraEnvVars",
+          "type": "object"
+        },
+        "extraSecretNamesForEnvFrom": {
+          "description": "Extra secrets for environment variables",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "extraSecretNamesForEnvFrom",
+          "type": "array"
+        },
+        "volumes": {
+          "description": "Additional volumes on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumes",
+          "type": "array"
+        },
+        "volumeMounts": {
+          "description": "Additional volumeMounts on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumeMounts",
+          "type": "array"
         }
       },
-      "required": ["mode", "count", "url"],
+      "required": ["mode", "count", "url", "allNodes", "autoscaling", "resources", "extraEnvVars", "extraSecretNamesForEnvFrom", "volumes", "volumeMounts", "pdb"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "allNodes": { "const": true },
+              "autoscaling": {
+                "properties": { "enabled": { "const": true } }
+              }
+            }
+          },
+          "then": {
+            "not": { "type": "object" },
+            "description": "allNodes and autoscaling.enabled cannot both be true"
+          }
+        }
+      ],
       "title": "webhook",
       "type": "object"
     },
@@ -1238,9 +2071,515 @@
           "title": "mode",
           "type": "string",
           "enum": ["regular", "queue"]
+        },
+        "allNodes": {
+          "default": false,
+          "description": "If true, all k8s nodes will deploy exatly one worker pod",
+          "required": [],
+          "title": "allNodes",
+          "type": "boolean"
+        },
+        "autoscaling": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "If true, the number of workers will be automatically scaled based on default metrics. On default, it will scale based on CPU and memory. For more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "minReplicas": {
+              "default": 1,
+              "description": "Minimum number of workers",
+              "required": [],
+              "title": "minReplicas",
+              "type": "integer"
+            },
+            "maxReplicas": {
+              "default": 10,
+              "description": "Maximum number of workers",
+              "required": [],
+              "title": "maxReplicas",
+              "type": "integer"
+            },
+            "metrics": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["Resource", "Pods", "Object", "External"]
+                  }
+                },
+                "oneOf": [
+                  {
+                    "properties": {
+                      "type": { "const": "Resource" },
+                      "resource": {
+                        "type": "object",
+                        "required": ["name", "target"],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": ["cpu", "memory"]
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": ["Utilization", "AverageValue", "Value"]
+                              },
+                              "averageUtilization": { "type": "integer", "minimum": 0 },
+                              "averageValue": { "type": "string" },
+                              "value": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Utilization" } } },
+                            "then": { "required": ["averageUtilization"] },
+                            "else": {
+                              "if": { "properties": { "type": { "const": "AverageValue" } } },
+                              "then": { "required": ["averageValue"] },
+                              "else": { "required": ["value"] }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["resource"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "Pods" },
+                      "pods": {
+                        "type": "object",
+                        "required": ["metric", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["AverageValue", "Value"] },
+                              "averageValue": { "type": "string" },
+                              "value": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "AverageValue" } } },
+                            "then": { "required": ["averageValue"] },
+                            "else": { "required": ["value"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["pods"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "Object" },
+                      "object": {
+                        "type": "object",
+                        "required": ["metric", "describedObject", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "describedObject": {
+                            "type": "object",
+                            "required": ["apiVersion", "kind", "name"],
+                            "properties": {
+                              "apiVersion": { "type": "string" },
+                              "kind": { "type": "string" },
+                              "name": { "type": "string" }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["Value", "AverageValue"] },
+                              "value": { "type": "string" },
+                              "averageValue": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Value" } } },
+                            "then": { "required": ["value"] },
+                            "else": { "required": ["averageValue"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["object"]
+                  },
+                  {
+                    "properties": {
+                      "type": { "const": "External" },
+                      "external": {
+                        "type": "object",
+                        "required": ["metric", "target"],
+                        "properties": {
+                          "metric": {
+                            "type": "object",
+                            "required": ["name"],
+                            "properties": {
+                              "name": { "type": "string" },
+                              "selector": {
+                                "type": "object",
+                                "properties": {
+                                  "matchLabels": { "type": "object" },
+                                  "matchExpressions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "required": ["key", "operator"],
+                                      "properties": {
+                                        "key": { "type": "string" },
+                                        "operator": { "type": "string" },
+                                        "values": { "type": "array", "items": { "type": "string" } }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "required": ["type"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["Value", "AverageValue"] },
+                              "value": { "type": "string" },
+                              "averageValue": { "type": "string" }
+                            },
+                            "if": { "properties": { "type": { "const": "Value" } } },
+                            "then": { "required": ["value"] },
+                            "else": { "required": ["averageValue"] }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["external"]
+                  }
+                ]
+              }
+            },
+            "behavior": {
+              "type": "object",
+              "properties": {
+                "scaleUp": {
+                  "type": "object",
+                  "properties": {
+                    "stabilizationWindowSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Time in seconds to wait before scaling up again (default: 0)"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "required": ["type", "value", "periodSeconds"],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["Pods", "Percent"],
+                            "description": "Type of scaling policy: Pods (fixed number) or Percent (percentage of current replicas)"
+                          },
+                          "value": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "The value to scale by (number of pods or percentage)"
+                          },
+                          "periodSeconds": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Time in seconds over which the policy is evaluated"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "description": "List of scaling policies for scale-up"
+                    },
+                    "selectPolicy": {
+                      "type": "string",
+                      "enum": ["Max", "Min", "Disabled"],
+                      "description": "Policy to select among multiple policies: Max (default), Min, or Disabled"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "scaleDown": {
+                  "type": "object",
+                  "properties": {
+                    "stabilizationWindowSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Time in seconds to wait before scaling down again (default: 300)"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "required": ["type", "value", "periodSeconds"],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["Pods", "Percent"],
+                            "description": "Type of scaling policy: Pods (fixed number) or Percent (percentage of current replicas)"
+                          },
+                          "value": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "The value to scale by (number of pods or percentage)"
+                          },
+                          "periodSeconds": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Time in seconds over which the policy is evaluated"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "description": "List of scaling policies for scale-down"
+                    },
+                    "selectPolicy": {
+                      "type": "string",
+                      "enum": ["Max", "Min", "Disabled"],
+                      "description": "Policy to select among multiple policies: Max (default), Min, or Disabled"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["enabled", "minReplicas", "maxReplicas", "metrics", "behavior"],
+          "title": "autoscaling",
+          "type": "object"
+        },
+        "pdb": {
+          "additionalProperties": false,
+          "description": "PodDisruptionBudget configuration for the worker node",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Whether to enable the PodDisruptionBudget for the worker node",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "default": 1,
+              "description": "Minimum number of available replicas for the worker node",
+              "required": [],
+              "title": "minAvailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxUnavailable": {
+              "default": null,
+              "description": "Maximum number of unavailable replicas for the worker node",
+              "required": [],
+              "title": "maxUnavailable",
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^[0-9]+%$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["enabled"],
+          "title": "pdb",
+          "type": "object",
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": ["enabled"]
+          },
+          "then": {
+            "not": {
+              "properties": {
+                "minAvailable": { "type": "null" },
+                "maxUnavailable": { "type": "null" }
+              },
+              "required": ["minAvailable", "maxUnavailable"]
+            }
+          }
+        },
+        "resources": {
+          "additionalProperties": true,
+          "description": "This block is for setting up the resource management for the pod more information can be found here: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "properties": {
+            "limits": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "2000m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "2Gi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "required": [],
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "required": [],
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "extraEnvVars": {
+          "additionalProperties": true,
+          "description": "Extra environment variables",
+          "required": [],
+          "title": "extraEnvVars",
+          "type": "object"
+        },
+        "extraSecretNamesForEnvFrom": {
+          "description": "Extra secrets for environment variables",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "extraSecretNamesForEnvFrom",
+          "type": "array"
+        },
+        "volumes": {
+          "description": "Additional volumes on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumes",
+          "type": "array"
+        },
+        "volumeMounts": {
+          "description": "Additional volumeMounts on the output Deployment definition.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "volumeMounts",
+          "type": "array"
         }
       },
-      "required": ["mode", "count", "concurrency"],
+      "required": ["mode", "count", "concurrency", "allNodes", "autoscaling", "resources", "extraEnvVars", "extraSecretNamesForEnvFrom", "volumes", "volumeMounts", "pdb"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "allNodes": { "const": true },
+              "autoscaling": {
+                "properties": { "enabled": { "const": true } }
+              }
+            }
+          },
+          "then": {
+            "not": { "type": "object" },
+            "description": "allNodes and autoscaling.enabled cannot both be true"
+          }
+        }
+      ],
       "title": "worker",
       "type": "object"
     },
@@ -1420,6 +2759,202 @@
       "required": ["enabled", "pruneTime"],
       "title": "workflowHistory",
       "type": "object"
+    },
+    "serviceMonitor": {
+      "additionalProperties": false,
+      "description": "The ServiceMonitor configuration for the n8n deployment. Please refer to the following link for more information: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Whether to enable the ServiceMonitor for the n8n deployment",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "namespace": {
+          "default": "",
+          "description": "The namespace for the ServiceMonitor. If empty, the ServiceMonitor will be deployed in the same namespace as the n8n chart.",
+          "title": "namespace",
+          "type": "string"
+        },
+        "interval": {
+          "default": "30s",
+          "description": "The interval for the ServiceMonitor (e.g., 30s, 1m, 1h)",
+          "title": "interval",
+          "type": "string",
+          "pattern": "^\\d+(ms|s|m|h|d|w|y)$"
+        },
+        "labels": {
+          "default": {
+            "release": "prometheus"
+          },
+          "description": "The labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator",
+          "title": "labels",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeout": {
+          "default": "10s",
+          "description": "The timeout for the ServiceMonitor (e.g., 10s, 1m)",
+          "title": "timeout",
+          "type": "string",
+          "pattern": "^\\d+(ms|s|m|h|d|w|y)$"
+        },
+        "targetLabels": {
+          "default": [],
+          "description": "Set of labels to transfer from the Kubernetes Service onto the target",
+          "title": "targetLabels",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metricRelabelings": {
+          "default": [],
+          "description": "The metric relabelings for the ServiceMonitor, following Prometheus relabel_config structure",
+          "title": "metricRelabelings",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sourceLabels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The source labels to relabel from"
+              },
+              "regex": {
+                "type": "string",
+                "description": "The regular expression to match against source labels"
+              },
+              "targetLabel": {
+                "type": "string",
+                "description": "The label to write the result to"
+              },
+              "action": {
+                "type": "string",
+                "enum": ["replace", "keep", "drop", "labeldrop", "labelkeep", "hashmod"],
+                "description": "The relabeling action to perform"
+              },
+              "separator": {
+                "type": "string",
+                "default": ";",
+                "description": "Separator used when concatenating source labels"
+              },
+              "modulus": {
+                "type": "integer",
+                "description": "Modulus to use with hashmod action"
+              },
+              "replacement": {
+                "type": "string",
+                "default": "$1",
+                "description": "Replacement value for the 'replace' action"
+              }
+            },
+            "required": ["action"],
+            "additionalProperties": true
+          }
+        },
+        "metricsPrefix": {
+          "default": "n8n_",
+          "description": "The metrics prefix for the ServiceMonitor",
+          "title": "metricsPrefix",
+          "type": "string"
+        },
+        "include": {
+          "default": {
+            "defaultMetrics": true,
+            "cacheMetrics": false,
+            "messageEventBusMetrics": false,
+            "workflowIdLabel": false,
+            "nodeTypeLabel": false,
+            "credentialTypeLabel": false,
+            "apiEndpoints": false,
+            "apiPathLabel": false,
+            "apiMethodLabel": false,
+            "apiStatusCodeLabel": false,
+            "queueMetrics": false
+          },
+          "description": "Metrics and labels to include in the ServiceMonitor",
+          "title": "include",
+          "type": "object",
+          "properties": {
+            "defaultMetrics": {
+              "default": true,
+              "description": "Whether to include default metrics",
+              "title": "defaultMetrics",
+              "type": "boolean"
+            },
+            "cacheMetrics": {
+              "default": false,
+              "description": "Whether to include cache metrics",
+              "title": "cacheMetrics",
+              "type": "boolean"
+            },
+            "messageEventBusMetrics": {
+              "default": false,
+              "description": "Whether to include message event bus metrics",
+              "title": "messageEventBusMetrics",
+              "type": "boolean"
+            },
+            "workflowIdLabel": {
+              "default": false,
+              "description": "Whether to include workflow id label",
+              "title": "workflowIdLabel",
+              "type": "boolean"
+            },
+            "nodeTypeLabel": {
+              "default": false,
+              "description": "Whether to include node type label",
+              "title": "nodeTypeLabel",
+              "type": "boolean"
+            },
+            "credentialTypeLabel": {
+              "default": false,
+              "description": "Whether to include credential type label",
+              "title": "credentialTypeLabel",
+              "type": "boolean"
+            },
+            "apiEndpoints": {
+              "default": false,
+              "description": "Whether to include api endpoints",
+              "title": "apiEndpoints",
+              "type": "boolean"
+            },
+            "apiPathLabel": {
+              "default": false,
+              "description": "Whether to include api path label",
+              "title": "apiPathLabel",
+              "type": "boolean"
+            },
+            "apiMethodLabel": {
+              "default": false,
+              "description": "Whether to include api method label",
+              "title": "apiMethodLabel",
+              "type": "boolean"
+            },
+            "apiStatusCodeLabel": {
+              "default": false,
+              "description": "Whether to include api status code label",
+              "title": "apiStatusCodeLabel",
+              "type": "boolean"
+            },
+            "queueMetrics": {
+              "default": false,
+              "description": "Whether to include queue metrics",
+              "title": "queueMetrics",
+              "type": "boolean"
+            }
+          },
+          "required": ["defaultMetrics", "cacheMetrics", "messageEventBusMetrics", "workflowIdLabel", "nodeTypeLabel", "credentialTypeLabel", "apiEndpoints", "apiPathLabel", "apiMethodLabel", "apiStatusCodeLabel", "queueMetrics"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["enabled", "namespace", "interval", "labels", "timeout", "targetLabels", "metricRelabelings", "metricsPrefix", "include"],
+      "title": "serviceMonitor",
+      "type": "object"
     }
   },
   "required": [
@@ -1435,6 +2970,7 @@
     "securityContext",
     "service",
     "log",
+    "binaryData",
     "db",
     "sentry",
     "diagnostics",
@@ -1445,6 +2981,7 @@
     "taskRunners",
     "workflowHistory",
     "encryptionKey",
+    "existingEncryptionKeySecret",
     "timezone",
     "defaultLocale",
     "gracefulShutdownTimeout",
@@ -1456,13 +2993,16 @@
     "readinessProbe",
     "volumes",
     "volumeMounts",
+    "license",
+    "main",
     "nodeSelector",
     "tolerations",
     "affinity",
     "redis",
     "externalRedis",
     "postgresql",
-    "externalPostgresql"
+    "externalPostgresql",
+    "serviceMonitor"
   ],
   "type": "object"
 }

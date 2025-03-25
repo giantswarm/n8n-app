@@ -1,14 +1,26 @@
 {{- if and (eq .Values.db.type "postgresdb") (eq .Values.worker.mode "queue") }}
 apiVersion: apps/v1
+{{- if .Values.worker.allNodes }}
+kind: DaemonSet
+{{- else }}
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ include "n8n.worker.fullname" . }}
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
   labels:
     {{- include "n8n.worker.labels" . | nindent 4 }}
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
 spec:
+  {{- if and .Values.worker.allNodes (eq .Values.strategy.type "RollingUpdate") }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+  {{- else }}
+  {{- if not .Values.worker.autoscaling.enabled }}
   replicas: {{ .Values.worker.count }}
+  {{- end }}
   strategy:
     type: {{ .Values.strategy.type }}
     {{- if eq .Values.strategy.type "RollingUpdate" }}
@@ -16,6 +28,7 @@ spec:
       maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
     {{- end }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "n8n.worker.selectorLabels" . | nindent 6 }}
@@ -59,7 +72,7 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml (default .Values.resources .Values.worker.resources) | nindent 12 }}
           env:
             - name: N8N_HIRING_BANNER_ENABLED
               value: "false"
@@ -112,7 +125,29 @@ spec:
                   name: {{ template "n8n.taskRunners.fullname" . }}-secret
                   key: worker-auth-token
           {{- end }}
-          {{- range $key, $value := .Values.extraEnvVars }}
+          {{- if has "s3" .Values.binaryData.availableModes }}
+            - name: N8N_EXTERNAL_STORAGE_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                {{- if and .Values.minio.enabled (eq (len .Values.minio.users) 0) }}
+                  name: {{ template "n8n.fullname" . }}-minio
+                  key: rootUser
+                {{- else }}
+                  name: {{ default (printf "%s-s3-secret" (include "n8n.fullname" .)) .Values.binaryData.s3.existingSecret }}
+                  key: access-key-id
+                {{- end }}
+            - name: N8N_EXTERNAL_STORAGE_S3_ACCESS_SECRET
+              valueFrom:
+                secretKeyRef:
+                {{- if and .Values.minio.enabled (eq (len .Values.minio.users) 0) }}
+                  name: {{ template "n8n.fullname" . }}-minio
+                  key: rootPassword
+                {{- else }}
+                  name: {{ default (printf "%s-s3-secret" (include "n8n.fullname" .)) .Values.binaryData.s3.existingSecret }}
+                  key: secret-access-key
+                {{- end }}
+          {{- end }}
+          {{- range $key, $value := (default .Values.extraEnvVars .Values.worker.extraEnvVars) }}
             - name: {{ upper $key }}
               value: {{ $value | quote }}
           {{- end }}
@@ -131,13 +166,23 @@ spec:
                 name: {{ template "n8n.fullname" . }}-queue-configmap
             - configMapRef:
                 name: {{ template "n8n.fullname" . }}-task-broker-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-metrics-configmap
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-binary-data-configmap
+          {{- if .Values.license.enabled }}
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-license-configmap
             - secretRef:
-                name: {{ template "n8n.fullname" . }}-encryption-key-secret
-          {{- range .Values.extraSecretNamesForEnvFrom }}
+                name: {{ default (printf "%s-license-activation-key" (include "n8n.fullname" .)) .Values.license.existingActivationKeySecret }}
+          {{- end }}
+            - secretRef:
+                name: {{ default (printf "%s-encryption-key-secret-v2" (include "n8n.fullname" .)) .Values.existingEncryptionKeySecret }}
+          {{- range (default .Values.extraSecretNamesForEnvFrom .Values.worker.extraSecretNamesForEnvFrom) }}
             - secretRef:
                 name: {{ . }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
+          {{- with (default .Values.volumeMounts .Values.worker.volumeMounts) }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -171,7 +216,7 @@ spec:
             - configMapRef:
                 name: {{ template "n8n.taskRunners.fullname" . }}-configmap
       {{- end }}
-      {{- with .Values.volumes }}
+      {{- with (default .Values.volumes .Values.worker.volumes) }}
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}

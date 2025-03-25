@@ -1,14 +1,26 @@
 {{- if and (eq .Values.db.type "postgresdb") (eq .Values.webhook.mode "queue") }}
 apiVersion: apps/v1
+{{- if .Values.webhook.allNodes }}
+kind: DaemonSet
+{{- else }}
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ include "n8n.webhook.fullname" . }}
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
   labels:
     {{- include "n8n.webhook.labels" . | nindent 4 }}
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Allow writable root for n8n container"
 spec:
+  {{- if and .Values.webhook.allNodes (eq .Values.strategy.type "RollingUpdate") }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+  {{- else }}
+  {{- if not .Values.webhook.autoscaling.enabled }}
   replicas: {{ .Values.webhook.count }}
+  {{- end }}
   strategy:
     type: {{ .Values.strategy.type }}
     {{- if eq .Values.strategy.type "RollingUpdate" }}
@@ -16,6 +28,7 @@ spec:
       maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
     {{- end }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "n8n.webhook.selectorLabels" . | nindent 6 }}
@@ -56,7 +69,7 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml (default .Values.resources .Values.webhook.resources) | nindent 12 }}
           env:
             - name: N8N_HIRING_BANNER_ENABLED
               value: "false"
@@ -114,7 +127,7 @@ spec:
               value: {{ .Values.taskRunners.taskHeartbeatInterval | quote }}
             - name: N8N_RUNNERS_MAX_CONCURRENCY
               value: {{ .Values.taskRunners.maxConcurrency | quote }}
-          {{- range $key, $value := .Values.extraEnvVars }}
+          {{- range $key, $value := (default .Values.extraEnvVars .Values.webhook.extraEnvVars) }}
             - name: {{ upper $key }}
               value: {{ $value | quote }}
           {{- end }}
@@ -131,17 +144,23 @@ spec:
                 name: {{ template "n8n.fullname" . }}-public-api-configmap
             - configMapRef:
                 name: {{ template "n8n.fullname" . }}-queue-configmap
+          {{- if .Values.license.enabled }}
+            - configMapRef:
+                name: {{ template "n8n.fullname" . }}-license-configmap
             - secretRef:
-                name: {{ template "n8n.fullname" . }}-encryption-key-secret
-          {{- range .Values.extraSecretNamesForEnvFrom }}
+                name: {{ default (printf "%s-license-activation-key" (include "n8n.fullname" .)) .Values.license.existingActivationKeySecret }}
+          {{- end }}
+            - secretRef:
+                name: {{ default (printf "%s-encryption-key-secret-v2" (include "n8n.fullname" .)) .Values.existingEncryptionKeySecret }}
+          {{- range (default .Values.extraSecretNamesForEnvFrom .Values.webhook.extraSecretNamesForEnvFrom) }}
             - secretRef:
                 name: {{ . }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
+          {{- with (default .Values.volumeMounts .Values.webhook.volumeMounts) }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.volumes }}
+      {{- with (default .Values.volumes .Values.webhook.volumes) }}
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}

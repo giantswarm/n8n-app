@@ -334,6 +334,34 @@ tests:
           value: 200Mi
         template: deployment-webhook.yaml
 
+  - it: should set resources when webhook.resources are set
+    set:
+      webhook:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].resources.requests.cpu
+          value: 100m
+        template: deployment-webhook.yaml
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].resources.requests.memory
+          value: 100Mi
+        template: deployment-webhook.yaml
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].resources.limits.cpu
+          value: 200m
+        template: deployment-webhook.yaml
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].resources.limits.memory
+          value: 200Mi
+        template: deployment-webhook.yaml
+
   - it: should set hiring banner disabled
     asserts:
       - contains:
@@ -595,6 +623,19 @@ tests:
             value: n8nextraenvvar
         template: deployment-webhook.yaml
 
+  - it: should set extra environment variables when webhook.extraEnvVars is set
+    set:
+      webhook:
+        extraEnvVars:
+          N8N_EXTRA_ENV_VAR: n8nextraenvvar
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].env
+          content:
+            name: N8N_EXTRA_ENV_VAR
+            value: n8nextraenvvar
+        template: deployment-webhook.yaml
+
   - it: should set n8n runners enabled environment variable
     asserts:
       - contains:
@@ -673,7 +714,7 @@ tests:
           path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
           content:
             secretRef:
-              name: n8n-encryption-key-secret
+              name: n8n-encryption-key-secret-v2
         template: deployment-webhook.yaml
 
   - it: should set extra secret names for envFrom when extraSecretNamesForEnvFrom is set
@@ -681,6 +722,26 @@ tests:
       extraSecretNamesForEnvFrom:
         - secret1
         - secret2
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
+          content:
+            secretRef:
+              name: secret1
+        template: deployment-webhook.yaml
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
+          content:
+            secretRef:
+              name: secret2
+        template: deployment-webhook.yaml
+
+  - it: should set extra secret names for envFrom when webhook.extraSecretNamesForEnvFrom is set
+    set:
+      webhook:
+        extraSecretNamesForEnvFrom:
+          - secret1
+          - secret2
     asserts:
       - contains:
           path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
@@ -710,6 +771,22 @@ tests:
             readOnly: true
         template: deployment-webhook.yaml
 
+  - it: should set extra volume mounts when webhook.volumeMounts is set
+    set:
+      webhook:
+        volumeMounts:
+          - name: fake-volume
+            mountPath: /fake-path
+            readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].volumeMounts
+          content:
+            name: fake-volume
+            mountPath: /fake-path
+            readOnly: true
+        template: deployment-webhook.yaml
+
   - it: should set extra volumes when volumes is set
     set:
       volumes:
@@ -717,6 +794,24 @@ tests:
           secret:
             secretName: mysecret
             optional: false
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: foo
+            secret:
+              secretName: mysecret
+              optional: false
+        template: deployment-webhook.yaml
+
+  - it: should set extra volumes when wevhook.volumes is set
+    set:
+      webhook:
+        volumes:
+          - name: foo
+            secret:
+              secretName: mysecret
+              optional: false
     asserts:
       - contains:
           path: spec.template.spec.volumes
@@ -829,4 +924,22 @@ tests:
           content:
             name: N8N_RUNNERS_MAX_CONCURRENCY
             value: "2"
+        template: deployment-webhook.yaml
+
+  - it: should use license configmap and secret when license.enabled is true
+    set:
+      license:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
+          content:
+            configMapRef:
+              name: n8n-license-configmap
+        template: deployment-webhook.yaml
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "n8n-webhook")].envFrom
+          content:
+            secretRef:
+              name: n8n-license-activation-key
         template: deployment-webhook.yaml
