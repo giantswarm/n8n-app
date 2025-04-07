@@ -118,7 +118,7 @@ dependencies:
     condition: redis.enabled
 
   - name: postgresql
-    version: 16.5.6
+    version: 16.6.0
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled
 
