@@ -3,6 +3,11 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  security:
+    # Allow using the bitnami legacy images temporarily until we completely replace them with our solution.
+    allowInsecureImages: true
+
 # -- This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
   repository: n8nio/n8n
@@ -662,6 +667,9 @@ redis:
   # -- Enable redis
   enabled: false
   architecture: standalone
+  image:
+    # -- This is temporary workaround because of bitnami's deprecation until to completely replace it with our solution.
+    repository: bitnamilegacy/redis
 
   master:
     persistence:
@@ -686,6 +694,9 @@ postgresql:
   # -- Enable postgresql
   enabled: false
   architecture: standalone
+  image:
+    # -- This is temporary workaround because of bitnami's deprecation until to completely replace it with our solution.
+    repository: bitnamilegacy/postgresql
 
   primary:
     service:
