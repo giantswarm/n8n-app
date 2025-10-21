@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- switch to bitnamilegacy images for redis and postgresql
+
 ## [1.5.1] - 2025-03-25
 
 ## [0.2.0] - 2025-03-07
