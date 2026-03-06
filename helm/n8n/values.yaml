@@ -667,9 +667,6 @@ redis:
   # -- Enable redis
   enabled: false
   architecture: standalone
-  image:
-    # -- This is temporary workaround because of bitnami's deprecation until to completely replace it with our solution.
-    repository: bitnamilegacy/redis
 
   master:
     persistence:
