@@ -1,3 +1,7 @@
 checks:
   exclude:
     - "pdb-unhealthy-pod-eviction-policy"
+    # Bitnami subcharts (postgresql, redis) resolve image tags via
+    # .Chart.AppVersion which doesn't work for subcharts in kube-linter's
+    # static analysis, causing false-positive :latest warnings.
+    - "latest-tag"
