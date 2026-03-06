@@ -694,9 +694,6 @@ postgresql:
   # -- Enable postgresql
   enabled: false
   architecture: standalone
-  image:
-    # -- This is temporary workaround because of bitnami's deprecation until to completely replace it with our solution.
-    repository: bitnamilegacy/postgresql
 
   primary:
     service:
