@@ -104,7 +104,7 @@ annotations:
     url: https://keybase.io/communitycharts/pgp_keys.asc
 dependencies:
   - name: redis
-    version: 25.3.11
+    version: 25.4.1
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
   - name: postgresql
