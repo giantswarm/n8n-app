@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update architect to v10.11.1 (giantswarm/n8n-app#136)
 - Update redis to v28.3.0 (giantswarm/n8n-app#141)
 - Update redis to v28.3.1 (giantswarm/n8n-app#143)
+- Update architect to v10.12.1 (giantswarm/n8n-app#142)
 
 ## [1.5.2] - 2025-10-21
 
