@@ -1,4 +1,4 @@
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/giantswarm/n8n/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/giantswarm/n8n/tree/main)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/giantswarm/n8n-app/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/giantswarm/n8n-app/tree/main)
 
 [Read me after cloning this template (GS staff only)](https://handbook.giantswarm.io/docs/dev-and-releng/app-developer-processes/adding_app_to_appcatalog/)
 
