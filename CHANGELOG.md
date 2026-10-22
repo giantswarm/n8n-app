@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The release and update-chart workflows authenticate as the `giantswarm-release` GitHub App instead of the shared taylorbot account (giantswarm/giantswarm#2280). `zz_generated.update_chart.yaml` calls the reusable update-chart workflow, like devctl generates it today. `Makefile.gen.app.mk` is regenerated with it: the reusable workflow passes the bare chart name as `APPLICATION`, which the current template prefixes with `helm/` itself.
 - Regenerate `.github/workflows/zz_generated.*.yaml` via devctl to use the centralized reusable workflow, removing the Node-20 `mindsers/changelog-reader-action` dependency.
 - Update architect to v10.11.1 (giantswarm/n8n-app#136)
 - Update redis to v28.3.0 (giantswarm/n8n-app#141)
