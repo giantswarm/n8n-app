@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update architect to v10.12.1 (giantswarm/n8n-app#142)
 - Update architect to v10.14.2 (giantswarm/n8n-app#156)
 - Update architect to v10.14.10 (giantswarm/n8n-app#158)
+- Update architect to v10.14.16 (giantswarm/n8n-app#164)
 
 ## [1.5.2] - 2025-10-21
 
